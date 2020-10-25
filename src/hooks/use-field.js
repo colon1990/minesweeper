@@ -11,9 +11,9 @@ import { CellVM, CellNeighborsUtils } from 'view-models';
 
 export const useField = ({ width, height, minesCount }) => {
   const length = width * height;
+  const cellNeighborsUtils = new CellNeighborsUtils(width, height);
 
   const emptyState = useMemo(() => Array(length).fill(new CellVM), [length]);
-  const cellNeighborsUtils = new CellNeighborsUtils(width, height);
 
   const [state, setState] = useState(emptyState);
 
