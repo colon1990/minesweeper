@@ -13,7 +13,7 @@ export const useField = ({ width, height, minesCount }) => {
   const length = width * height;
 
   const emptyState = useMemo(() => Array(length).fill(new CellVM), [length]);
-  const cellNeighborsUtils = useMemo(() => new CellNeighborsUtils(width, height), [width, height]);
+  const cellNeighborsUtils = new CellNeighborsUtils(width, height);
 
   const [state, setState] = useState(emptyState);
 

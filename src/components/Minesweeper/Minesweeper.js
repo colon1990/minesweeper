@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-import produce from 'immer';
-
 import reject from 'lodash/reject';
 import some from 'lodash/some';
 
@@ -32,17 +30,13 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
     if (isInit) revealCell(cell, address);
     else {
       init(address)
-      setState(produce(state, draft => {
-        draft.isInit = true;
-      }));
+      setState({ ...state, isInit: true });
     }
   };
 
   const handleFlagPlanting = (cell, address) => {
     plantFlag(cell, address);
-    setState(produce(state, draft => {
-      draft.remainingMinesCount += cell.hasFlag ? 1 : -1;
-    }));
+    setState({ ...state, remainingMinesCount: remainingMinesCount + (cell.hasFlag ? 1 : -1) });
   };
 
   const handleSmileyFaceClick = () => {
@@ -51,15 +45,10 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
   };
 
   useDidUpdate(() => {
-    if (some(fieldState, 'hasBustedMine')) setState(produce(state, draft => {
-      draft.isBust = true;
-    }));
+    if (some(fieldState, 'hasBustedMine')) setState({ ...state, isBust: true });
     else if (!some(reject(fieldState, 'hasMine'), 'isHidden')) {
       markMines();
-      setState(produce(state, draft => {
-        draft.remainingMinesCount = 0;
-        draft.isVictory = true;
-      }));
+      setState({ ...state, remainingMinesCount: 0, isVictory: true });
     }
   }, fieldState);
 
