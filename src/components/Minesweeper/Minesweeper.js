@@ -20,11 +20,13 @@ const actionType = {
 const reducer = (state, { type, payload }) => {
   switch (type) {
     case actionType.UpdateIsInit:
-    case actionType.UpdateIsBust:
-    case actionType.UpdateIsVictory:
-      return { ...state, ...payload };
+      return { ...state, isInit: true };
     case actionType.UpdateRemainingMinesCount:
-      return { ...state, remainingMinesCount: state.remainingMinesCount + payload.count };
+      return { ...state, remainingMinesCount: state.remainingMinesCount + payload.increment };
+    case actionType.UpdateIsBust:
+      return { ...state, isBust: true };
+    case actionType.UpdateIsVictory:
+      return { ...state, remainingMinesCount: 0, isVictory: true };
     case actionType.Reset:
       return { ...payload };
     default:
@@ -51,13 +53,13 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
     if (isInit) revealCell(cell, address);
     else {
       init(address)
-      dispatch({ type: actionType.UpdateIsInit, payload: { isInit: true } });
+      dispatch({ type: actionType.UpdateIsInit });
     }
   };
 
   const handleFlagPlanting = (cell, address) => {
     plantFlag(cell, address);
-    dispatch({ type: actionType.UpdateRemainingMinesCount, payload: { count: cell.hasFlag ? 1 : -1 } });
+    dispatch({ type: actionType.UpdateRemainingMinesCount, payload: { increment: cell.hasFlag ? 1 : -1 } });
   };
 
   const handleSmileyFaceClick = () => {
@@ -66,10 +68,10 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
   };
 
   useDidUpdate(() => {
-    if (some(fieldState, 'hasBustedMine')) dispatch({ type: actionType.UpdateIsBust, payload: { isBust: true } });
+    if (some(fieldState, 'hasBustedMine')) dispatch({ type: actionType.UpdateIsBust });
     else if (!some(reject(fieldState, 'hasMine'), 'isHidden')) {
       markMines();
-      dispatch({ type: actionType.UpdateIsVictory, payload: { remainingMinesCount: 0, isVictory: true } });
+      dispatch({ type: actionType.UpdateIsVictory });
     }
   }, fieldState);
 
