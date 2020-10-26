@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 
 import reject from 'lodash/reject';
 import some from 'lodash/some';
@@ -8,6 +8,29 @@ import { useField, useDidUpdate } from 'hooks';
 import { Field, Indicators } from '..';
 
 import './Minesweeper.scss';
+
+const actionType = {
+  UpdateIsInit: 'update-is-init',
+  UpdateRemainingMinesCount: 'update-remaining-mines-count',
+  Reset: 'reset',
+  UpdateIsBust: 'update-is-bust',
+  UpdateIsVictory: 'update-is-victory',
+};
+
+const reducer = (state, { type, payload }) => {
+  switch (type) {
+    case actionType.UpdateIsInit:
+    case actionType.UpdateIsBust:
+    case actionType.UpdateIsVictory:
+      return { ...state, ...payload };
+    case actionType.UpdateRemainingMinesCount:
+      return { ...state, remainingMinesCount: state.remainingMinesCount + payload.count };
+    case actionType.Reset:
+      return { ...payload };
+    default:
+      return { ...state };
+  }
+};
 
 export const Minesweeper = ({ minesCount, fieldDimension }) => {
   const {
@@ -22,33 +45,31 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
 
   const initialState = { remainingMinesCount: minesCount, isInit: false, isBust: false, isVictory: false };
 
-  const [state, setState] = useState(initialState);
-
-  const { remainingMinesCount, isInit, isBust, isVictory } = state;
+  const [{ remainingMinesCount, isInit, isBust, isVictory }, dispatch] = useReducer(reducer, initialState);
 
   const handleCellReveal = (cell, address) => {
     if (isInit) revealCell(cell, address);
     else {
       init(address)
-      setState({ ...state, isInit: true });
+      dispatch({ type: actionType.UpdateIsInit, payload: { isInit: true } });
     }
   };
 
   const handleFlagPlanting = (cell, address) => {
     plantFlag(cell, address);
-    setState({ ...state, remainingMinesCount: remainingMinesCount + (cell.hasFlag ? 1 : -1) });
+    dispatch({ type: actionType.UpdateRemainingMinesCount, payload: { count: cell.hasFlag ? 1 : -1 } });
   };
 
   const handleSmileyFaceClick = () => {
     reset();
-    setState({ ...initialState });
+    dispatch({ type: actionType.Reset, payload: initialState });
   };
 
   useDidUpdate(() => {
-    if (some(fieldState, 'hasBustedMine')) setState({ ...state, isBust: true });
+    if (some(fieldState, 'hasBustedMine')) dispatch({ type: actionType.UpdateIsBust, payload: { isBust: true } });
     else if (!some(reject(fieldState, 'hasMine'), 'isHidden')) {
       markMines();
-      setState({ ...state, remainingMinesCount: 0, isVictory: true });
+      dispatch({ type: actionType.UpdateIsVictory, payload: { remainingMinesCount: 0, isVictory: true } });
     }
   }, fieldState);
 
