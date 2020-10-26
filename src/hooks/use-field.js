@@ -7,13 +7,15 @@ import range from 'lodash/range';
 
 import { cellState, cellValue } from 'const';
 
-import { CellVM, CellNeighborsUtils } from 'view-models';
+import { CellNeighborsUtils } from 'view-models';
+
+import { isMinedCell, isHiddenCell, isFlaggedCell } from 'utils/check-cell';
 
 export const useField = ({ width, height, minesCount }) => {
   const length = width * height;
   const cellNeighborsUtils = new CellNeighborsUtils(width, height);
 
-  const emptyField = useMemo(() => Array(length).fill(new CellVM), [length]);
+  const emptyField = useMemo(() => Array(length).fill({ value: cellValue.Empty, state: cellState.Hidden }), [length]);
   const [field, setField] = useState(emptyField);
 
   const getFloodFilledField = (address, draftFn) => produce(field, draft => {
@@ -23,9 +25,8 @@ export const useField = ({ width, height, minesCount }) => {
     const floodFill = cellAdr => {
       cellNeighborsUtils.canFloodFill(draft, cellAdr) && cellNeighborsUtils.getAddresses(cellAdr).forEach(adr => {
         const cell = draft[adr];
-        const { hasMine, isHidden, hasFlag } = cell;
 
-        if (!hasMine && isHidden && !hasFlag) {
+        if (!isMinedCell(cell) && isHiddenCell(cell) && !isFlaggedCell(cell)) {
           cell.state = cellState.Visible;
 
           floodFill(adr);
@@ -38,12 +39,12 @@ export const useField = ({ width, height, minesCount }) => {
 
   const getBustedField = draftFn => produce(field, draft => {
     draftFn(draft);
-
     draft.forEach((cell, adr) => {
-      const { hasUnrevealedMine, hasMisplacedFlag } = cell;
-
-      hasUnrevealedMine && (cell.state = cellState.Visible);
-      hasMisplacedFlag && (draft[adr] = new CellVM(cellValue.IncorrectGuess, cellState.Visible));
+      isMinedCell(cell) && !isFlaggedCell(cell) && (cell.state = cellState.Visible);
+      !isMinedCell(cell) && isFlaggedCell(cell) && (draft[adr] = {
+        value: cellValue.IncorrectGuess,
+        state: cellState.Visible,
+      });
     });
   });
 
@@ -63,20 +64,20 @@ export const useField = ({ width, height, minesCount }) => {
       });
 
       draft.forEach((cell, adr) => {
-        !cell.hasMine && (cell.value = cellNeighborsUtils.getMinedCount(draft, adr));
+        !isMinedCell(cell) && (cell.value = cellNeighborsUtils.getMinedCount(draft, adr));
       });
     }));
   };
 
-  const revealCell = ({ hasMine }, address) => {
-    setField(hasMine ? getBustedField(draft => {
-      draft[address] = new CellVM(cellValue.BustedMine, cellState.Visible);
+  const revealCell = (cell, address) => {
+    setField(isMinedCell(cell) ? getBustedField(draft => {
+      draft[address] = { value: cellValue.BustedMine, state: cellState.Visible };
     }) : getFloodFilledField(address));
   };
 
-  const plantFlag = ({ hasFlag }, address) => {
+  const plantFlag = (cell, address) => {
     setField(produce(field, draft => {
-      draft[address].state = cellState[hasFlag ? 'Hidden' : 'Flagged'];
+      draft[address].state = cellState[isFlaggedCell(cell) ? 'Hidden' : 'Flagged'];
     }));
   };
 
@@ -85,10 +86,9 @@ export const useField = ({ width, height, minesCount }) => {
     else if (cellNeighborsUtils.canRevealNeighbors(field, address)) setField(getBustedField(draft => {
       cellNeighborsUtils.getAddresses(address).forEach(adr => {
         const cell = draft[adr];
-        const { hasUnrevealedMine, hasMisplacedFlag } = cell;
 
-        hasUnrevealedMine && (cell.value = cellValue.BustedMine);
-        hasMisplacedFlag && (cell.value = cellValue.IncorrectGuess);
+        isMinedCell(cell) && !isFlaggedCell(cell) && (cell.value = cellValue.BustedMine);
+        !isMinedCell(cell) && isFlaggedCell(cell) && (cell.value = cellValue.IncorrectGuess);
 
         cell.state = cellState.Visible;
       });
@@ -98,7 +98,7 @@ export const useField = ({ width, height, minesCount }) => {
   const markMines = () => {
     setField(produce(field, draft => {
       draft.forEach(cell => {
-        cell.hasMine && (cell.state = cellState.Flagged);
+        isMinedCell(cell) && (cell.state = cellState.Flagged);
       });
     }));
   };

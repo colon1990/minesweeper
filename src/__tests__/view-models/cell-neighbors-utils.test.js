@@ -1,33 +1,35 @@
-import { CellNeighborsUtils, CellVM } from 'view-models';
+import { CellNeighborsUtils } from 'view-models';
 
 import { cellState, cellValue } from 'const';
 
 describe('CellNeighborsUtils', () => {
-  const fieldWidth = 3;
-  const fieldHeight = 3;
+  const fieldDimension = 3;
 
   let cellNeighborsUtils;
 
   const to1DState = state => state.flat();
   const sortAddresses = addresses => addresses.sort((prev, next) => prev - next);
 
+  const getCell = (value = cellValue.Empty) => ({ value, state: cellState.Hidden });
+  const getMinedCell = (state = cellState.Hidden) => ({ value: cellValue.Mine, state });
+
   beforeEach(() => {
-    cellNeighborsUtils = new CellNeighborsUtils(fieldWidth, fieldHeight);
+    cellNeighborsUtils = new CellNeighborsUtils(fieldDimension, fieldDimension);
   });
 
   it('should indicate ability to flood fill', () => {
     const floodFillAbleState = to1DState([
-      [new CellVM(cellValue.One), new CellVM(cellValue.One), new CellVM(cellValue.One)],
-      [new CellVM(cellValue.One), new CellVM(cellValue.Mine, cellState.Flagged), new CellVM(cellValue.One)],
-      [new CellVM(cellValue.One), new CellVM(cellValue.One), new CellVM(cellValue.One)],
+      [getCell(cellValue.One), getCell(cellValue.One), getCell(cellValue.One)],
+      [getCell(cellValue.One), getMinedCell(cellState.Flagged), getCell(cellValue.One)],
+      [getCell(cellValue.One), getCell(cellValue.One), getCell(cellValue.One)],
     ]);
 
     expect(cellNeighborsUtils.canFloodFill(floodFillAbleState, 4)).toBe(true);
 
     const floodFillUnableState = to1DState([
-      [new CellVM(cellValue.Mine), new CellVM(cellValue.One), new CellVM(cellValue.One)],
-      [new CellVM(cellValue.One), new CellVM(cellValue.Mine, cellState.Flagged), new CellVM(cellValue.One)],
-      [new CellVM(cellValue.One), new CellVM(cellValue.One), new CellVM(cellValue.One)],
+      [getMinedCell(), getCell(cellValue.Two), getCell(cellValue.One)],
+      [getCell(cellValue.Two), getMinedCell(cellState.Flagged), getCell(cellValue.One)],
+      [getCell(cellValue.One), getCell(cellValue.One), getCell(cellValue.One)],
     ]);
 
     expect(cellNeighborsUtils.canFloodFill(floodFillUnableState, 4)).toBe(false);
@@ -49,9 +51,9 @@ describe('CellNeighborsUtils', () => {
 
   it('should return mined cells count', () => {
     const state = to1DState([
-      [new CellVM, new CellVM, new CellVM],
-      [new CellVM, new CellVM, new CellVM(cellValue.Mine)],
-      [new CellVM, new CellVM, new CellVM(cellValue.Mine)],
+      [getCell(), getCell(cellValue.One), getCell(cellValue.One)],
+      [getCell(), getCell(cellValue.Two), getMinedCell()],
+      [getCell(), getCell(cellValue.Two), getMinedCell()],
     ]);
 
     expect(cellNeighborsUtils.getMinedCount(state, 4)).toBe(2);
@@ -61,9 +63,9 @@ describe('CellNeighborsUtils', () => {
 
   it('should indicate if neighbors could be revealed', () => {
     const minesRevealedState = to1DState([
-      [new CellVM(cellValue.Mine), new CellVM, new CellVM],
-      [new CellVM, new CellVM, new CellVM],
-      [new CellVM, new CellVM, new CellVM(cellValue.Empty, cellState.Flagged)],
+      [getMinedCell(), getCell(cellValue.One), getCell()],
+      [getCell(cellValue.One), getCell(cellValue.One), getCell()],
+      [getCell(), getCell(), { value: cellValue.Empty, state: cellState.Flagged }],
     ]);
 
     expect(cellNeighborsUtils.canRevealNeighbors(minesRevealedState, 4)).toBe(true);

@@ -18,9 +18,9 @@ describe('useField', () => {
 
   it('should have empty state', () => {
     const MockComponent = () => {
-      const { state } = useField({ minesCount, width: fieldDimension, height: fieldDimension });
+      const { field } = useField({ minesCount, width: fieldDimension, height: fieldDimension });
 
-      return <>{state.map(({ value }, address) => <div key={address}>{value}</div>)}</>;
+      return <>{field.map(({ value }, address) => <div key={address}>{value}</div>)}</>;
     };
 
     render(<MockComponent />);

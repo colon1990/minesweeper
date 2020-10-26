@@ -3,9 +3,10 @@ import React, { useReducer } from 'react';
 import produce from 'immer';
 
 import reject from 'lodash/reject';
-import some from 'lodash/some';
 
 import { useField, useDidUpdate } from 'hooks';
+
+import { isBustedCell, isFlaggedCell, isHiddenCell, isMinedCell } from 'utils/check-cell';
 
 import { Field, Indicators } from '..';
 
@@ -63,7 +64,7 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
 
   const handleFlagPlanting = (cell, address) => {
     plantFlag(cell, address);
-    dispatch({ type: actionType.UpdateRemainingMinesCount, payload: { increment: cell.hasFlag ? 1 : -1 } });
+    dispatch({ type: actionType.UpdateRemainingMinesCount, payload: { increment: isFlaggedCell(cell) ? 1 : -1 } });
   };
 
   const handleSmileyFaceClick = () => {
@@ -72,8 +73,8 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
   };
 
   useDidUpdate(() => {
-    if (some(field, 'hasBustedMine')) dispatch({ type: actionType.UpdateIsBust });
-    else if (!some(reject(field, 'hasMine'), 'isHidden')) {
+    if (field.some(isBustedCell)) dispatch({ type: actionType.UpdateIsBust });
+    else if (!reject(field, isMinedCell).some(isHiddenCell)) {
       markMines();
       dispatch({ type: actionType.UpdateIsVictory });
     }

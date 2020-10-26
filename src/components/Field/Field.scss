@@ -4,6 +4,7 @@
   padding: 1px;
   max-width: fit-content;
   background-color: dimgrey;
+  user-select: none;
 
   &.disabled .cell {
     cursor: default;
