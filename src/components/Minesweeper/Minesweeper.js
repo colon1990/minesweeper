@@ -36,8 +36,6 @@ const reducer = (state, { type, payload }) => type === actionType.Reset ? { ...p
     case actionType.UpdateIsVictory:
       draft.remainingMinesCount = 0;
       draft.isVictory = true;
-
-      break;
   }
 });
 
