@@ -40,8 +40,11 @@ const reducer = (state, { type, payload }) => type === actionType.Reset ? { ...p
 });
 
 export const Minesweeper = ({ minesCount, fieldDimension }) => {
+  const initialState = { remainingMinesCount: minesCount, isInit: false, isBust: false, isVictory: false };
+
+  const [{ remainingMinesCount, isInit, isBust, isVictory }, dispatch] = useReducer(reducer, initialState);
   const {
-    state: fieldState,
+    field,
     reset,
     init,
     revealCell,
@@ -49,10 +52,6 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
     revealNeighbors,
     markMines,
   } = useField({ minesCount, width: fieldDimension, height: fieldDimension });
-
-  const initialState = { remainingMinesCount: minesCount, isInit: false, isBust: false, isVictory: false };
-
-  const [{ remainingMinesCount, isInit, isBust, isVictory }, dispatch] = useReducer(reducer, initialState);
 
   const handleCellReveal = (cell, address) => {
     if (isInit) revealCell(cell, address);
@@ -73,12 +72,12 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
   };
 
   useDidUpdate(() => {
-    if (some(fieldState, 'hasBustedMine')) dispatch({ type: actionType.UpdateIsBust });
-    else if (!some(reject(fieldState, 'hasMine'), 'isHidden')) {
+    if (some(field, 'hasBustedMine')) dispatch({ type: actionType.UpdateIsBust });
+    else if (!some(reject(field, 'hasMine'), 'isHidden')) {
       markMines();
       dispatch({ type: actionType.UpdateIsVictory });
     }
-  }, fieldState);
+  }, field);
 
   return <div className='minesweeper'>
     <Indicators
@@ -92,7 +91,7 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
     <Field
       width={fieldDimension}
       disabled={isBust || isVictory}
-      state={fieldState}
+      state={field}
       cellRevealHandler={handleCellReveal}
       flagPlantingHandler={handleFlagPlanting}
       neighborsRevealHandler={revealNeighbors}

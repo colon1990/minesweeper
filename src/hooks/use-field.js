@@ -4,7 +4,6 @@ import produce from 'immer';
 
 import difference from 'lodash/difference';
 import range from 'lodash/range';
-import cloneDeep from 'lodash/cloneDeep';
 
 import { cellState, cellValue } from 'const';
 
@@ -14,13 +13,11 @@ export const useField = ({ width, height, minesCount }) => {
   const length = width * height;
   const cellNeighborsUtils = new CellNeighborsUtils(width, height);
 
-  const emptyState = useMemo(() => Array(length).fill(new CellVM), [length]);
+  const emptyField = useMemo(() => Array(length).fill(new CellVM), [length]);
+  const [field, setField] = useState(emptyField);
 
-  const [state, setState] = useState(emptyState);
-
-  const getFloodFilledState = (prevState, address, draftFn) => produce(prevState, draft => {
+  const getFloodFilledField = (address, draftFn) => produce(field, draft => {
     /* eslint-disable-line */ draftFn?.(draft);
-
     draft[address].state = cellState.Visible;
 
     const floodFill = cellAdr => {
@@ -39,7 +36,7 @@ export const useField = ({ width, height, minesCount }) => {
     floodFill(address);
   });
 
-  const getBustedState = (prevState, draftFn) => produce(prevState, draft => {
+  const getBustedField = draftFn => produce(field, draft => {
     draftFn(draft);
 
     draft.forEach((cell, adr) => {
@@ -51,11 +48,11 @@ export const useField = ({ width, height, minesCount }) => {
   });
 
   const reset = () => {
-    setState(emptyState);
+    setField(emptyField);
   };
 
   const init = address => {
-    setState(getFloodFilledState(state, address, draft => {
+    setField(getFloodFilledField(address, draft => {
       const addresses = difference(range(length), [address, ...cellNeighborsUtils.getAddresses(address)]);
       const randomAddresses = new Set;
 
@@ -72,44 +69,39 @@ export const useField = ({ width, height, minesCount }) => {
   };
 
   const revealCell = ({ hasMine }, address) => {
-    setState(hasMine ? getBustedState(state, draft => {
+    setField(hasMine ? getBustedField(draft => {
       draft[address] = new CellVM(cellValue.BustedMine, cellState.Visible);
-    }) : getFloodFilledState(state, address));
+    }) : getFloodFilledField(address));
   };
 
   const plantFlag = ({ hasFlag }, address) => {
-    setState(produce(state, draft => {
+    setField(produce(field, draft => {
       draft[address].state = cellState[hasFlag ? 'Hidden' : 'Flagged'];
     }));
   };
 
   const revealNeighbors = address => {
-    setState(() => {
-      if (cellNeighborsUtils.canFloodFill(state, address)) return getFloodFilledState(state, address);
+    if (cellNeighborsUtils.canFloodFill(field, address)) setField(getFloodFilledField(address));
+    else if (cellNeighborsUtils.canRevealNeighbors(field, address)) setField(getBustedField(draft => {
+      cellNeighborsUtils.getAddresses(address).forEach(adr => {
+        const cell = draft[adr];
+        const { hasUnrevealedMine, hasMisplacedFlag } = cell;
 
-      if (cellNeighborsUtils.canRevealNeighbors(state, address)) return getBustedState(state, draft => {
-        cellNeighborsUtils.getAddresses(address).forEach(adr => {
-          const cell = draft[adr];
-          const { hasUnrevealedMine, hasMisplacedFlag } = cell;
+        hasUnrevealedMine && (cell.value = cellValue.BustedMine);
+        hasMisplacedFlag && (cell.value = cellValue.IncorrectGuess);
 
-          hasUnrevealedMine && (cell.value = cellValue.BustedMine);
-          hasMisplacedFlag && (cell.value = cellValue.IncorrectGuess);
-
-          cell.state = cellState.Visible;
-        });
+        cell.state = cellState.Visible;
       });
-
-      return cloneDeep(state);
-    });
+    }));
   };
 
   const markMines = () => {
-    setState(produce(state, draft => {
+    setField(produce(field, draft => {
       draft.forEach(cell => {
         cell.hasMine && (cell.state = cellState.Flagged);
       });
     }));
   };
 
-  return { state, reset, init, revealCell, plantFlag, revealNeighbors, markMines };
+  return { field, reset, init, revealCell, plantFlag, revealNeighbors, markMines };
 };
