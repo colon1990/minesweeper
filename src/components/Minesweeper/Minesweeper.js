@@ -1,5 +1,7 @@
 import React, { useReducer } from 'react';
 
+import produce from 'immer';
+
 import reject from 'lodash/reject';
 import some from 'lodash/some';
 
@@ -17,22 +19,27 @@ const actionType = {
   UpdateIsVictory: 'update-is-victory',
 };
 
-const reducer = (state, { type, payload }) => {
+const reducer = (state, { type, payload }) => type === actionType.Reset ? { ...payload } : produce(state, draft => {
   switch (type) {
     case actionType.UpdateIsInit:
-      return { ...state, isInit: true };
+      draft.isInit = true;
+
+      break;
     case actionType.UpdateRemainingMinesCount:
-      return { ...state, remainingMinesCount: state.remainingMinesCount + payload.increment };
+      draft.remainingMinesCount += payload.increment;
+
+      break;
     case actionType.UpdateIsBust:
-      return { ...state, isBust: true };
+      draft.isBust = true;
+
+      break;
     case actionType.UpdateIsVictory:
-      return { ...state, remainingMinesCount: 0, isVictory: true };
-    case actionType.Reset:
-      return { ...payload };
-    default:
-      return { ...state };
+      draft.remainingMinesCount = 0;
+      draft.isVictory = true;
+
+      break;
   }
-};
+});
 
 export const Minesweeper = ({ minesCount, fieldDimension }) => {
   const {
