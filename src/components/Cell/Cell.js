@@ -8,9 +8,7 @@ import { cellValue } from 'const';
 
 import './Cell.scss';
 
-export const Cell = memo(({ state, cellRevealHandler, flagPlantingHandler, neighborsRevealHandler }) => {
-  const { value } = state;
-
+export const Cell = memo(({ state: { value }, cellRevealHandler, flagPlantingHandler, neighborsRevealHandler }) => {
   const hasGuessedIncorrectly = value === cellValue.IncorrectGuess;
   const hasBustedMine = isBustedCell(state);
 
