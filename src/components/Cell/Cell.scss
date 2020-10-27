@@ -15,14 +15,11 @@ $cell-dimension: 28px;
   width: $cell-dimension;
   height: $cell-dimension;
   line-height: $cell-dimension;
-  border: none;
-  font-family: Arial, Helvetica, sans-serif;
   font-size: 18px;
   font-weight: bold;
   text-align: center;
   cursor: pointer;
-  background-color: #bdbdbd;
-  outline: none;
+  background-color: lightgrey;
 
   &__busted-mine {
     background-color: red;
@@ -41,7 +38,7 @@ $cell-dimension: 28px;
   }
 
   &__visible {
-    background-color: white;
+    background-color: darkgrey;
 
     &__1 {
       color: blue;
