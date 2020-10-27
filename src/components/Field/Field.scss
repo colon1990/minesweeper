@@ -1,6 +1,8 @@
 .field {
   display: grid;
   grid-gap: 1px;
+  padding: 1px;
+  background-color: black;
   max-width: fit-content;
   user-select: none;
 
