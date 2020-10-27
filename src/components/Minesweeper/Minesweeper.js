@@ -13,37 +13,37 @@ import { Field, Indicators } from '..';
 import './Minesweeper.scss';
 
 const actionType = {
-  UpdateIsInit: 'update-is-init',
-  UpdateRemainingMinesCount: 'update-remaining-mines-count',
+  Init: 'init',
+  HiddenMinesCountUpdate: 'hidden-mines-count-update',
   Reset: 'reset',
-  UpdateIsBust: 'update-is-bust',
-  UpdateIsVictory: 'update-is-victory',
+  Bust: 'bust',
+  Victory: 'victory',
 };
 
 const reducer = (state, { type, payload }) => type === actionType.Reset ? { ...payload } : produce(state, draft => {
   switch (type) {
-    case actionType.UpdateIsInit:
+    case actionType.Init:
       draft.isInit = true;
 
       break;
-    case actionType.UpdateRemainingMinesCount:
-      draft.remainingMinesCount += payload.increment;
+    case actionType.HiddenMinesCountUpdate:
+      draft.hiddenMinesCount += payload;
 
       break;
-    case actionType.UpdateIsBust:
+    case actionType.Bust:
       draft.isBust = true;
 
       break;
-    case actionType.UpdateIsVictory:
-      draft.remainingMinesCount = 0;
+    case actionType.Victory:
+      draft.hiddenMinesCount = 0;
       draft.isVictory = true;
   }
 });
 
 export const Minesweeper = ({ minesCount, fieldDimension }) => {
-  const initialState = { remainingMinesCount: minesCount, isInit: false, isBust: false, isVictory: false };
+  const initialState = { hiddenMinesCount: minesCount, isInit: false, isBust: false, isVictory: false };
 
-  const [{ remainingMinesCount, isInit, isBust, isVictory }, dispatch] = useReducer(reducer, initialState);
+  const [{ hiddenMinesCount, isInit, isBust, isVictory }, dispatch] = useReducer(reducer, initialState);
   const {
     field,
     reset,
@@ -58,13 +58,13 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
     if (isInit) revealCell(cell, address);
     else {
       init(address)
-      dispatch({ type: actionType.UpdateIsInit });
+      dispatch({ type: actionType.Init });
     }
   };
 
   const handleFlagPlanting = (cell, address) => {
     plantFlag(cell, address);
-    dispatch({ type: actionType.UpdateRemainingMinesCount, payload: { increment: isFlaggedCell(cell) ? 1 : -1 } });
+    dispatch({ type: actionType.HiddenMinesCountUpdate, payload: isFlaggedCell(cell) ? 1 : -1 });
   };
 
   const handleSmileyFaceClick = () => {
@@ -73,16 +73,16 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
   };
 
   useDidUpdate(() => {
-    if (field.some(isBustedCell)) dispatch({ type: actionType.UpdateIsBust });
+    if (field.some(isBustedCell)) dispatch({ type: actionType.Bust });
     else if (!reject(field, isMinedCell).some(isHiddenCell)) {
       markMines();
-      dispatch({ type: actionType.UpdateIsVictory });
+      dispatch({ type: actionType.Victory });
     }
   }, field);
 
   return <div className='minesweeper'>
     <Indicators
-      minesCount={remainingMinesCount}
+      minesCount={hiddenMinesCount}
       isBust={isBust}
       isVictory={isVictory}
       shouldStartCountingSeconds={isInit && !(isBust || isVictory)}
