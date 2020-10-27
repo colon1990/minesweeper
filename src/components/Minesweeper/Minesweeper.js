@@ -85,7 +85,7 @@ export const Minesweeper = ({ minesCount, fieldDimension }) => {
       minesCount={remainingMinesCount}
       isBust={isBust}
       isVictory={isVictory}
-      shouldStartCountingSeconds={isInit}
+      shouldStartCountingSeconds={isInit && !(isBust || isVictory)}
       smileyFaceClickHandler={handleSmileyFaceClick}
     />
 
