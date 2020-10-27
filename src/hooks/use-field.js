@@ -13,8 +13,8 @@ import { isMinedCell, isHiddenCell, isFlaggedCell } from 'utils/check-cell';
 
 export const useField = ({ width, height, minesCount }) => {
   const length = width * height;
-  const cellNeighborsUtils = new CellNeighborsUtils(width, height);
 
+  const cellNeighborsUtils = useMemo(() => new CellNeighborsUtils(width, height), [length]);
   const emptyField = useMemo(() => Array(length).fill({ value: cellValue.Empty, state: cellState.Hidden }), [length]);
   const [field, setField] = useState(emptyField);
 
